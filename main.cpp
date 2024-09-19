@@ -32,7 +32,7 @@ int main()
 
 	RegisterClassEx(&wc);
 
-	// ÇØ»óµµ ¼³Á¤
+	// í•´ìƒë„ ì„¤ì •
 	RECT wr = { 0, 0, width, height };
 	AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
 
@@ -40,10 +40,10 @@ int main()
 		wc.lpszClassName,
 		L"Kusk Ray Tracer",
 		WS_OVERLAPPEDWINDOW,
-		100, // À©µµ¿ì ÁÂÃø »ó´Ü x ÁÂÇ¥
-		100, // À©µµ¿ì ÁÂÃø »ó´Ü y ÁÂÇ¥
-		wr.right - wr.left, // À©µµ¿ì °¡·Î ¹æÇâ ÇØ»óµµ
-		wr.bottom - wr.top, // À©µµ¿ì ¼¼·Î ¹æÇâ ÇØ»óµµ
+		100, // ìœˆë„ìš° ì¢Œì¸¡ ìƒë‹¨ x ì¢Œí‘œ
+		100, // ìœˆë„ìš° ì¢Œì¸¡ ìƒë‹¨ y ì¢Œí‘œ
+		wr.right - wr.left, // ìœˆë„ìš° ê°€ë¡œ ë°©í–¥ í•´ìƒë„
+		wr.bottom - wr.top, // ìœˆë„ìš° ì„¸ë¡œ ë°©í–¥ í•´ìƒë„
 		NULL,
 		NULL,
 		wc.hInstance,
@@ -84,9 +84,9 @@ int main()
 			ImGui::NewFrame();
 			ImGui::Begin("Circle");
 			
-			ImGui::SliderFloat2("Center", &example->circle1->center.x, -float(width) / height, float(width) / height);
-			ImGui::SliderFloat("Radius", &example->circle1->radius, 0.0f, 1.0f);
-			ImGui::SliderFloat3("RGB", &example->circle1->color.x, 0.0f, 1.0f);
+			ImGui::SliderFloat2("Center", &example->raytracer.sphere->center.x, -1.0f, 1.0f);
+			ImGui::SliderFloat("Radius", &example->raytracer.sphere->radius, 0.0f, 1.0f);
+			ImGui::SliderFloat3("RGB", &example->raytracer.sphere->color.x, 0.0f, 1.0f);
 			
 			ImGui::End();
 			ImGui::Render();
@@ -132,16 +132,16 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			return 0;
 		break;
 	case WM_MOUSEMOVE:
-		std::cout << "Mouse " << LOWORD(lParam) << " " << HIWORD(lParam) << std::endl;
+		//std::cout << "Mouse " << LOWORD(lParam) << " " << HIWORD(lParam) << std::endl;
 		break;
 	case WM_LBUTTONUP:
-		std::cout << "WM_LBUTTONUP Left mouse button" << std::endl;
+		//std::cout << "WM_LBUTTONUP Left mouse button" << std::endl;
 		break;
 	case WM_RBUTTONUP:
-		std::cout << "WM_RBUTTONUP Right mouse button" << std::endl;
+		//std::cout << "WM_RBUTTONUP Right mouse button" << std::endl;
 		break;
 	case WM_KEYDOWN:
-		std::cout << "WM_KEYDOWN " << (int)wParam << std::endl;
+		//std::cout << "WM_KEYDOWN " << (int)wParam << std::endl;
 		break;
 	case WM_DESTROY:
 		::PostQuitMessage(0);
