@@ -84,8 +84,8 @@ int main()
 			ImGui::NewFrame();
 			ImGui::Begin("Circle");
 			
-			ImGui::SliderFloat2("Center", &example->circle1->center.x, 0.0f, float(width - 1.0f));
-			ImGui::SliderFloat("Radius", &example->circle1->radius, 0.0f, float(width - 1.0f));
+			ImGui::SliderFloat2("Center", &example->circle1->center.x, -float(width) / height, float(width) / height);
+			ImGui::SliderFloat("Radius", &example->circle1->radius, 0.0f, 1.0f);
 			ImGui::SliderFloat3("RGB", &example->circle1->color.x, 0.0f, 1.0f);
 			
 			ImGui::End();
