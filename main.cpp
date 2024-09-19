@@ -13,8 +13,8 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 int main()
 {
-	const int width = 1280, height = 960;
-	const int canvasWidth = width / 80, canvasHeight = height / 80;
+	const int width = 1280, height = 720;
+	const int canvasWidth = width, canvasHeight = height;
 
 	WNDCLASSEX wc = {
 		sizeof(WNDCLASSEX),
@@ -55,7 +55,7 @@ int main()
 	UpdateWindow(hwnd);
 
 	// Create Example Instance
-	auto example = std::make_unique<Example>(hwnd, width, height, canvasWidth, canvasHeight);
+	auto example = std::make_unique<Example>(hwnd, width, height);
 
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -67,7 +67,6 @@ int main()
 	ImGui_ImplDX11_Init(example->device, example->deviceContext);
 	ImGui_ImplWin32_Init(hwnd);
 
-	float canvasColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f }; // :TODO:
 
 	// Main Message loop
 	MSG msg = {};
@@ -80,21 +79,21 @@ int main()
 		}
 		else
 		{
-			// Start ImGui frame
-			ImGui_ImplDX11_NewFrame();
-			ImGui_ImplWin32_NewFrame();
-			ImGui::NewFrame();
-			ImGui::Begin("Background Color");
-			ImGui::SliderFloat3("RGB(0.0->1.0)", canvasColor, 0.0f, 1.0f);
-			ImGui::End();
-			ImGui::Render();
+			// Start ImGui frame :IMGUI:
+			//ImGui_ImplDX11_NewFrame();
+			//ImGui_ImplWin32_NewFrame();
+			//ImGui::NewFrame();
+			//ImGui::Begin("Background Color");
+			//float canvasColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };// Dummy
+			//ImGui::SliderFloat3("RGB(0.0->1.0)", canvasColor, 0.0f, 1.0f);
+			//ImGui::End();
+			//ImGui::Render();
 
 			// Example cycle
-			example->SetBackgroundColor(canvasColor);
 			example->Update();
 			example->Render();
 
-			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+			//ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // :IMGUI:
 
 			// switch the back buffer and the front buffer
 			example->swapChain->Present(1, 0);
