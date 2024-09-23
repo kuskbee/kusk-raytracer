@@ -49,7 +49,7 @@ public:
 	void Update()
 	{
 		static int count = 0;
-		if (count == 0) // 한 번만 렌더링
+		//if (count == 0) // 한 번만 렌더링
 		{
 			pixels.resize(raytracer.width * raytracer.height);
 

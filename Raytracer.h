@@ -4,6 +4,7 @@
 #include "Ray.h"
 #include "Light.h"
 #include "Triangle.h"
+#include "Square.h"
 
 #include <vector>
 
@@ -15,6 +16,7 @@ class Raytracer
 public:
 	int width, height;
 	Light light;
+	shared_ptr<Sphere> sphere;
 	std::vector<shared_ptr<Object>> objects;
 
 	Raytracer(const int& width, const int& height)
@@ -51,6 +53,7 @@ public:
 #pragma endregion
 
 #pragma region square_sphere
+		if(false)
 		{
 			auto sphere1 = make_shared<Sphere>(vec3(0.6f, 0.0f, 0.5f), 0.4f);
 			sphere1->amb = vec3(0.1f);
@@ -75,7 +78,24 @@ public:
 		}
 #pragma endregion
 
-		light = Light{ {0.0f, 1.0f, -1.0f } }; // 화면 뒤쪽
+		auto sphere1 = make_shared<Sphere>(vec3(0.0f, 0.0f, 0.6f), 0.4f);
+		sphere1->amb = vec3(0.2f, 0.0f, 0.0f);
+		sphere1->dif = vec3(1.0f, 0.1f, 0.1f);
+		sphere1->spec = vec3(1.5f);
+		sphere1->alpha = 50.0f;
+
+		this->sphere = sphere1; // GUI 연결하기 위해 보관
+		objects.push_back(sphere1);
+
+		auto square1 = make_shared<Square>(vec3(-2.0f, -1.0f, 0.0f), vec3(-2.0f, -1.0f, 4.0f), vec3(2.0f, -1.0f, 4.0f), vec3(2.0f, -1.0f, 0.0f));
+		square1->amb = vec3(0.2f);
+		square1->dif = vec3(0.8f);
+		square1->spec = vec3(1.0f);
+		square1->alpha = 50.0f;
+		objects.push_back(square1);
+
+
+		light = Light{ {0.0f, 1.0f, 0.2f } };
 	}
 
 	Hit FindClosestCollision(Ray& ray)
@@ -106,15 +126,22 @@ public:
 
 		if(hit.d >= 0.0f)
 		{
-			//return sphere->color * hit.d; // 이전 색 결정 버전
-
 			// 퐁 모델(Phong reflection model)으로 조명 효과 계산
 			// 참고 자료
 			// https://en.wikipedia.org/wiki/Phong_reflection_model
 			// https://www.scratchapixel.com/lessons/3d-basic-rendering/phong-shader-BRDF
 
-			// Diffuse
 			const vec3 dirToLight = glm::normalize(light.pos - hit.point);
+			const float dirToLightLen = glm::length(light.pos - hit.point);
+
+			// Shadow
+			Ray pointToLight = { hit.point + dirToLight * 1e-4f, dirToLight }; // 충돌점 자체에서 충돌감지되는 것을 방지 (+ dirToLight * 1e-4f)
+			const auto hit2 = FindClosestCollision(pointToLight);
+
+			if (hit2.d >= 0.0f && dirToLightLen > hit2.d)
+				return hit.obj->amb;
+			
+			// Diffuse
 			const float diff = glm::max(dot(hit.normal, dirToLight), 0.0f);
 
 			// Specular

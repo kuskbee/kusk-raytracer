@@ -148,6 +148,7 @@
     <ClInclude Include="Object.h" />
     <ClInclude Include="Ray.h" />
     <ClInclude Include="Raytracer.h" />
+    <ClInclude Include="Square.h" />
     <ClInclude Include="Triangle.h" />
   </ItemGroup>
   <ItemGroup>
