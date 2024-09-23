@@ -16,8 +16,8 @@ class Raytracer
 public:
 	int width, height;
 	Light light;
-	shared_ptr<Sphere> sphere;
 	std::vector<shared_ptr<Object>> objects;
+	shared_ptr<Object> tempObject;
 
 	Raytracer(const int& width, const int& height)
 		: width(width), height(height)
@@ -78,24 +78,47 @@ public:
 		}
 #pragma endregion
 
-		auto sphere1 = make_shared<Sphere>(vec3(0.0f, 0.0f, 0.6f), 0.4f);
-		sphere1->amb = vec3(0.2f, 0.0f, 0.0f);
-		sphere1->dif = vec3(1.0f, 0.1f, 0.1f);
-		sphere1->spec = vec3(1.5f);
-		sphere1->alpha = 50.0f;
+#pragma region ground_square_sphere
+		if(false)
+		{
+			auto sphere1 = make_shared<Sphere>(vec3(0.0f, 0.0f, 0.6f), 0.4f);
+			sphere1->amb = vec3(0.2f, 0.0f, 0.0f);
+			sphere1->dif = vec3(1.0f, 0.1f, 0.1f);
+			sphere1->spec = vec3(1.5f);
+			sphere1->alpha = 50.0f;
 
-		this->sphere = sphere1; // GUI 연결하기 위해 보관
-		objects.push_back(sphere1);
+			objects.push_back(sphere1);
 
-		auto square1 = make_shared<Square>(vec3(-2.0f, -1.0f, 0.0f), vec3(-2.0f, -1.0f, 4.0f), vec3(2.0f, -1.0f, 4.0f), vec3(2.0f, -1.0f, 0.0f));
-		square1->amb = vec3(0.2f);
-		square1->dif = vec3(0.8f);
-		square1->spec = vec3(1.0f);
-		square1->alpha = 50.0f;
-		objects.push_back(square1);
+			auto square1 = make_shared<Square>(vec3(-2.0f, -1.0f, 0.0f), vec3(-2.0f, -1.0f, 4.0f), vec3(2.0f, -1.0f, 4.0f), vec3(2.0f, -1.0f, 0.0f));
+			square1->amb = vec3(0.2f);
+			square1->dif = vec3(0.8f);
+			square1->spec = vec3(1.0f);
+			square1->alpha = 50.0f;
+			objects.push_back(square1);
+		}
+#pragma endregion
 
+		{
+			auto sphere1 = make_shared<Sphere>(vec3(1.0f, 0.0f, 1.5f), 0.4f);
 
-		light = Light{ {0.0f, 1.0f, 0.2f } };
+			sphere1->amb = vec3(0.2f);
+			sphere1->dif = vec3(1.0f, 0.2f, 0.2f);
+			sphere1->spec = vec3(0.5f);
+			sphere1->alpha = 10.0f;
+
+			objects.push_back(sphere1);
+
+			auto triangle = make_shared<Triangle>(vec3(-2.0f, -2.0f, 2.0f), vec3(-2.0f, 2.0f, 2.0f), vec3(2.0f, 2.0f, 2.0f));
+			triangle->amb = vec3(1.0f);
+			triangle->dif = vec3(0.0f);
+			triangle->spec = vec3(0.0f);
+
+			tempObject = triangle; // 따로 처리하기 위해 임시로 저장
+
+			objects.push_back(triangle);
+		}
+
+		light = Light{ {0.0f, 1.0f, 0.5f } };
 	}
 
 	Hit FindClosestCollision(Ray& ray)
@@ -112,6 +135,12 @@ public:
 				closestHit = hit;
 				closestHit.obj = objects[ l ];
 				closestD = hit.d;
+
+				// Barycentric coordinates 복사
+				closestHit.w = hit.w;
+
+				// 텍스춰 좌표
+				// closestHit.uv = hit.uv;
 			}
 		}
 
@@ -131,26 +160,48 @@ public:
 			// https://en.wikipedia.org/wiki/Phong_reflection_model
 			// https://www.scratchapixel.com/lessons/3d-basic-rendering/phong-shader-BRDF
 
+			glm::vec3 pointColor;
+
+			// Ambient
+			pointColor = hit.obj->amb;
+
+			if (hit.obj == this->tempObject) // 임시로 삼각형만 색을 직접 결정
+			{
+				const auto color0 = vec3(1.0f, 0.0f, 0.0f);
+				const auto color1 = vec3(0.0f, 1.0f, 0.0f);
+				const auto color2 = vec3(0.0f, 0.0f, 1.0f);
+
+				const float w0 = hit.w[ 0 ]; // hit.w.x
+				const float w1 = hit.w[ 1 ]; // hit.w.y
+				const float w2 = 1.0f - w0 - w1;
+
+				pointColor = color0 * w0 + color1 * w1 + color2 * w2;
+			}
+
 			const vec3 dirToLight = glm::normalize(light.pos - hit.point);
 			const float dirToLightLen = glm::length(light.pos - hit.point);
 
-			// Shadow
-			Ray pointToLight = { hit.point + dirToLight * 1e-4f, dirToLight }; // 충돌점 자체에서 충돌감지되는 것을 방지 (+ dirToLight * 1e-4f)
-			const auto hit2 = FindClosestCollision(pointToLight);
+			// Shadow (주석처리)
+			//Ray pointToLight = { hit.point + dirToLight * 1e-4f, dirToLight }; // 충돌점 자체에서 충돌감지되는 것을 방지 (+ dirToLight * 1e-4f)
+			//const auto hit2 = FindClosestCollision(pointToLight);
 
-			if (hit2.d >= 0.0f && dirToLightLen > hit2.d)
-				return hit.obj->amb;
+			//if (hit2.d >= 0.0f && dirToLightLen > hit2.d)
+			//	return hit.obj->amb;
 			
 			// Diffuse
 			const float diff = glm::max(dot(hit.normal, dirToLight), 0.0f);
 
 			// Specular
-			const vec3 reflectDir = 2.0f * glm::max(dot(hit.normal, dirToLight), 0.0f) * hit.normal - dirToLight; // 2 (n dot l) n - l
-			const float specular = glm::pow(glm::max(glm::dot(-ray.dir, reflectDir), 0.0f), hit.obj->alpha);
+			//const vec3 reflectDir = 2.0f * glm::max(dot(hit.normal, dirToLight), 0.0f) * hit.normal - dirToLight; // 2 (n dot l) n - l
+			//const float specular = glm::pow(glm::max(glm::dot(-ray.dir, reflectDir), 0.0f), hit.obj->alpha);
 
-			return hit.obj->amb + hit.obj->dif * diff + hit.obj->spec * specular;
-			// return sphere->diff * diff;
-			// return sphere->spec * specular;
+			const vec3 reflectDir = dirToLight - hit.normal * 2.0f * dot(dirToLight, hit.normal);
+			const float specular = glm::pow(glm::max(glm::dot(ray.dir, reflectDir), 0.0f), hit.obj->alpha);
+
+			pointColor += diff * hit.obj->dif;
+			pointColor += hit.obj->spec * specular;
+
+			return pointColor;
 		}
 
 		return vec3(0.0f);

@@ -20,6 +20,9 @@ public:
 	// float reflection_ = 0.0f;
 	// float transparency = 0.0f;
 
+	// std::shared_ptr<Texture> ambTexture;
+	// std::shared_ptr<Textrue> difTexture;
+
 	Object(const vec3& color = {1.0f, 1.0f, 1.0f})
 		: amb(color), dif(color), spec(color)
 	{

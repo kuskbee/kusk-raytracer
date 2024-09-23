@@ -79,20 +79,20 @@ int main()
 		else
 		{
 			// Start ImGui frame :IMGUI:
-			ImGui_ImplDX11_NewFrame();
+			/*ImGui_ImplDX11_NewFrame();
 			ImGui_ImplWin32_NewFrame();
 			ImGui::NewFrame();
 			ImGui::Begin("Scene Control");
 			ImGui::SliderFloat3("Light Position", &example->raytracer.light.pos.x, -2.0f, 2.0f);
 			ImGui::SliderFloat3("Sphere Position", &example->raytracer.sphere->center.x, -1.0f, 1.0f);
 			ImGui::End();
-			ImGui::Render();
+			ImGui::Render();*/
 
 			// Example cycle
 			example->Update();
 			example->Render();
 
-			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // :IMGUI:
+			//ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // :IMGUI:
 
 			// switch the back buffer and the front buffer
 			example->swapChain->Present(1, 0);

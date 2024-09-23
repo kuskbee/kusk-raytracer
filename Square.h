@@ -7,9 +7,17 @@ class Square : public Object
 public:
 	Triangle triangle1, triangle2;
 
-	Square(vec3 v0, vec3 v1, vec3 v2, vec3 v3)
+	Square(vec3 v0, vec3 v1, vec3 v2, vec3 v3, vec2 uv0 = vec2(0.0f), vec2 uv1 = vec2(0.0f), vec2 uv2 = vec2(0.0f), vec2 uv3 = vec2(0.0f))
 		: triangle1(v0, v1, v2), triangle2(v0, v2, v3)
-	{}
+	{
+		triangle1.uv0 = uv0;
+		triangle1.uv1 = uv1;
+		triangle1.uv2 = uv2;
+
+		triangle2.uv0 = uv0;
+		triangle2.uv1 = uv2;
+		triangle2.uv2 = uv3;
+	}
 
 	virtual Hit CheckRayCollision(Ray& ray)
 	{
