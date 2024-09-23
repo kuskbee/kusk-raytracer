@@ -7,10 +7,10 @@ using namespace glm;
 class Sphere : public Object
 {
 public:
-	glm::vec3 center;
+	vec3 center;
 	float radius;
 	
-	Sphere(const glm::vec3 &center, const float radius, const glm::vec3 &color)
+	Sphere(const vec3 &center, const float radius, const vec3 &color = vec3(1.0f))
 		: center(center), radius(radius), Object(color)
 	{}
 

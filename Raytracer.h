@@ -3,6 +3,7 @@
 #include "Sphere.h"
 #include "Ray.h"
 #include "Light.h"
+#include "Triangle.h"
 
 #include <vector>
 
@@ -19,52 +20,82 @@ public:
 	Raytracer(const int& width, const int& height)
 		: width(width), height(height)
 	{
-		// 스크린으로부터 거리가 다른 구 3개
-		auto sphere1 = make_shared<Sphere>(vec3(0.5f, 0.0f, 0.5f), 0.4f, vec3(0.5f, 0.5f, 0.5f));
-		auto sphere2 = make_shared<Sphere>(vec3(0.0f, 0.0f, 1.0f), 0.4f, vec3(0.5f, 0.5f, 0.5f));
-		auto sphere3 = make_shared<Sphere>(vec3(-0.5f, 0.0f, 1.5f), 0.4f, vec3(0.5f, 0.5f, 0.5f));
+#pragma region sphere3_sample_perspective
+		if(false)
+		{
+			// 스크린으로부터 거리가 다른 구 3개
+			auto sphere1 = make_shared<Sphere>(vec3(0.5f, 0.0f, 0.5f), 0.4f, vec3(0.5f, 0.5f, 0.5f));
+			auto sphere2 = make_shared<Sphere>(vec3(0.0f, 0.0f, 1.0f), 0.4f, vec3(0.5f, 0.5f, 0.5f));
+			auto sphere3 = make_shared<Sphere>(vec3(-0.5f, 0.0f, 1.5f), 0.4f, vec3(0.5f, 0.5f, 0.5f));
 
-		sphere1->amb = vec3(0.2f);
-		sphere1->dif = vec3(1.0f, 0.2f, 0.2f);
-		sphere1->spec = vec3(0.5f);
-		sphere1->alpha = 10.0f;
+			sphere1->amb = vec3(0.2f);
+			sphere1->dif = vec3(1.0f, 0.2f, 0.2f);
+			sphere1->spec = vec3(0.5f);
+			sphere1->alpha = 10.0f;
 
-		sphere2->amb = vec3(0.2f);
-		sphere2->dif = vec3(0.2f, 1.0f, 0.2f);
-		sphere2->spec = vec3(0.5f);
-		sphere2->alpha = 10.0f;
+			sphere2->amb = vec3(0.2f);
+			sphere2->dif = vec3(0.2f, 1.0f, 0.2f);
+			sphere2->spec = vec3(0.5f);
+			sphere2->alpha = 10.0f;
 
-		sphere3->amb = vec3(0.2f);
-		sphere3->dif = vec3(0.2f, 0.2f, 1.0f);
-		sphere3->spec = vec3(0.5f);
-		sphere3->alpha = 10.0f;
+			sphere3->amb = vec3(0.2f);
+			sphere3->dif = vec3(0.2f, 0.2f, 1.0f);
+			sphere3->spec = vec3(0.5f);
+			sphere3->alpha = 10.0f;
 
-		// 일부러 역순으로 추가
-		objects.push_back(sphere3);
-		objects.push_back(sphere2);
-		objects.push_back(sphere1);
+			// 일부러 역순으로 추가
+			objects.push_back(sphere3);
+			objects.push_back(sphere2);
+			objects.push_back(sphere1);
+		}
+#pragma endregion
+
+#pragma region square_sphere
+		{
+			auto sphere1 = make_shared<Sphere>(vec3(0.6f, 0.0f, 0.5f), 0.4f);
+			sphere1->amb = vec3(0.1f);
+			sphere1->dif = vec3(1.0f, 0.1f, 0.1f);
+			sphere1->spec = vec3(1.0f);
+			sphere1->alpha = 50.0f;
+			objects.push_back(sphere1);
+
+			auto triangle1 = make_shared<Triangle>(vec3(-2.0f, -2.0f, 2.0f), vec3(-2.0f, 2.0f, 5.0f), vec3(2.0f, 2.0f, 5.0f));
+			triangle1->amb = vec3(0.2f);
+			triangle1->dif = vec3(0.5f);
+			triangle1->spec = vec3(0.5f);
+			triangle1->alpha = 5.0f;
+			objects.push_back(triangle1);
+
+			auto triangle2 = make_shared<Triangle>(vec3(-2.0f, -2.0f, 2.0f), vec3(2.0f, 2.0f, 5.0f), vec3(2.0f, -2.0f, 2.0f));
+			triangle2->amb = vec3(0.2f);
+			triangle2->dif = vec3(0.5f);
+			triangle2->spec = vec3(0.5f);
+			triangle2->alpha = 5.0f;
+			objects.push_back(triangle2);
+		}
+#pragma endregion
 
 		light = Light{ {0.0f, 1.0f, -1.0f } }; // 화면 뒤쪽
 	}
 
 	Hit FindClosestCollision(Ray& ray)
 	{
-		Hit closest_hit = Hit{ -1.0f, dvec3(0.0), dvec3(0.0) };
+		Hit closestHit = Hit{ -1.0f, dvec3(0.0), dvec3(0.0) };
 
-		float smallest = numeric_limits<float>::max( );
+		float closestD = numeric_limits<float>::max( );
 		for (int l = 0; l < objects.size( ); l++)
 		{
 			auto hit = objects[ l ]->CheckRayCollision(ray);
 
-			if (hit.d >= 0.0f && hit.d < smallest)
+			if (hit.d >= 0.0f && hit.d < closestD)
 			{
-				closest_hit = hit;
-				closest_hit.obj = objects[ l ];
-				smallest = hit.d;
+				closestHit = hit;
+				closestHit.obj = objects[ l ];
+				closestD = hit.d;
 			}
 		}
 
-		return closest_hit;
+		return closestHit;
 	}
 	
 	// 광선이 물체에 닿으면 그 물체의 색 반환

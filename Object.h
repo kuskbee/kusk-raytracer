@@ -20,7 +20,7 @@ public:
 	// float reflection_ = 0.0f;
 	// float transparency = 0.0f;
 
-	Object(const glm::vec3& color)
+	Object(const vec3& color = {1.0f, 1.0f, 1.0f})
 		: amb(color), dif(color), spec(color)
 	{
 	}
