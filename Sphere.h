@@ -10,10 +10,20 @@ class Sphere
 public:
 	glm::vec3 center;
 	float radius;
-	glm::vec3 color;
+	
+	// 퐁 쉐이딩(Phong Shading)을 위한 재질(material)
+	vec3 amb = vec3(0.0f);	// Ambient
+	vec3 diff = vec3(0.0f); // Diffuse
+	vec3 spec = vec3(0.0f);	// Specular
+	float ks = 0.0f;
+	float alpha = 0.0f;
 
-	Sphere(const glm::vec3 &center, const float radius, const glm::vec3 &color)
-		: center(center), color(color), radius(radius)
+	//float reflection_ = 0.0;
+	//float transparentcy = 0.0f;
+
+
+	Sphere(const vec3 &center, const float radius)
+		: center(center), radius(radius)
 	{}
 
 	Hit IntersectRayCollision(Ray& ray)
@@ -29,21 +39,20 @@ public:
 		// https://en.wikipedia.org/wiki/Line%E2%80%93sphere_intersection
 		// Calculation using vectors in 3D
 
+		// const double a = glm::dot(ray.dir, ray.dir); // dir이 unit vector라면 a는 1.0
+
 		// get nabla
-		float first = glm::dot(ray.dir, ray.start - center);
-		float second = glm::dot(ray.start - center, ray.start - center);
-		float nabla = first * first - (second - radius * radius);
+		float b = 2.0f * glm::dot(ray.dir, ray.start - this->center);
+		float c = glm::dot(ray.start - this->center, ray.start - this->center) - this->radius * this->radius;
+		float det = b * b - 4.0f * c;
 
-		if (nabla >= 0) {
-			float dis1 = -first - nabla;
-			float dis2 = -first + nabla;
+		if (det >= 0.0f) {
+			float dis1 = (- b - sqrt(det)) / 2.0f;
+			float dis2 = (- b + sqrt(det)) / 2.0f;
 
-			if (dis1 > 0 || dis2 > 0) {
-				hit.d = (dis1 < dis2) ? dis1 : dis2;
-				hit.point = ray.start + hit.d * ray.dir;
-				hit.normal = glm::normalize(hit.point - center);
-			}
-
+			hit.d = glm::min(dis1, dis2);
+			hit.point = ray.start + ray.dir * hit.d;
+			hit.normal = glm::normalize(hit.point - this->center);
 		}
 
 		return hit;

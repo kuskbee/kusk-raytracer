@@ -144,6 +144,7 @@
     <ClInclude Include="graphics.h" />
     <ClInclude Include="Hit.h" />
     <ClInclude Include="Image.h" />
+    <ClInclude Include="Light.h" />
     <ClInclude Include="Ray.h" />
     <ClInclude Include="Raytracer.h" />
   </ItemGroup>

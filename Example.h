@@ -47,7 +47,7 @@ public:
 
 	void Update()
 	{
-		std::vector<glm::vec4> pixels(width * height, glm::vec4{ 0.8f, 0.8f, 0.8f, 1.0f });
+		std::vector<glm::vec4> pixels(raytracer.width * raytracer.height, glm::vec4{ 0.8f, 0.8f, 0.8f, 1.0f });
 
 		raytracer.Render(pixels);
 		
@@ -181,8 +181,8 @@ public:
 		textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 		textureDesc.MiscFlags = 0;
 		textureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-		textureDesc.Width = width;
-		textureDesc.Height = height;
+		textureDesc.Width = raytracer.width;
+		textureDesc.Height = raytracer.height;
 
 		device->CreateTexture2D(&textureDesc, nullptr, &canvasTexture);
 

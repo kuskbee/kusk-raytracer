@@ -86,7 +86,12 @@ int main()
 			
 			ImGui::SliderFloat2("Center", &example->raytracer.sphere->center.x, -1.0f, 1.0f);
 			ImGui::SliderFloat("Radius", &example->raytracer.sphere->radius, 0.0f, 1.0f);
-			ImGui::SliderFloat3("RGB", &example->raytracer.sphere->color.x, 0.0f, 1.0f);
+			ImGui::SliderFloat3("Light", &example->raytracer.light.pos.x, -2.0f, 2.0f);
+			ImGui::SliderFloat3("Ambient color", &example->raytracer.sphere->amb.x, 0.0f, 1.0f);
+			ImGui::SliderFloat3("Diffuse color", &example->raytracer.sphere->diff.x, 0.0f, 1.0f);
+			ImGui::SliderFloat3("Specular color", &example->raytracer.sphere->spec.x, 0.0f, 1.0f);
+			ImGui::SliderFloat("Specular power", &example->raytracer.sphere->alpha, 0.0f, 100.0f);
+			ImGui::SliderFloat("Specular coeff", &example->raytracer.sphere->ks, 0.0f, 1.0f);
 			
 			ImGui::End();
 			ImGui::Render();
