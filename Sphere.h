@@ -1,32 +1,20 @@
 #pragma once
 
-#include "Hit.h"
-#include "Ray.h"
+#include "Object.h"
 
 using namespace glm;
 
-class Sphere
+class Sphere : public Object
 {
 public:
 	glm::vec3 center;
 	float radius;
 	
-	// 퐁 쉐이딩(Phong Shading)을 위한 재질(material)
-	vec3 amb = vec3(0.0f);	// Ambient
-	vec3 diff = vec3(0.0f); // Diffuse
-	vec3 spec = vec3(0.0f);	// Specular
-	float ks = 0.0f;
-	float alpha = 0.0f;
-
-	//float reflection_ = 0.0;
-	//float transparentcy = 0.0f;
-
-
-	Sphere(const vec3 &center, const float radius)
-		: center(center), radius(radius)
+	Sphere(const glm::vec3 &center, const float radius, const glm::vec3 &color)
+		: center(center), radius(radius), Object(color)
 	{}
 
-	Hit IntersectRayCollision(Ray& ray)
+	Hit CheckRayCollision(Ray& ray) override
 	{
 		Hit hit = Hit{ -1.0f, vec3(0.0f), vec3(0.0f) }; // d가 음수이면 충돌하지 않은 것으로 가정
 		
@@ -46,7 +34,8 @@ public:
 		float c = glm::dot(ray.start - this->center, ray.start - this->center) - this->radius * this->radius;
 		float det = b * b - 4.0f * c;
 
-		if (det >= 0.0f) {
+		if (det >= 0.0f)
+		{
 			float dis1 = (- b - sqrt(det)) / 2.0f;
 			float dis2 = (- b + sqrt(det)) / 2.0f;
 

@@ -21,6 +21,7 @@ public:
 
 	int width, height;
 	Raytracer raytracer;
+	std::vector<glm::vec4> pixels;
 
 	ID3D11Device* device;
 	ID3D11DeviceContext* deviceContext;
@@ -47,15 +48,20 @@ public:
 
 	void Update()
 	{
-		std::vector<glm::vec4> pixels(raytracer.width * raytracer.height, glm::vec4{ 0.8f, 0.8f, 0.8f, 1.0f });
+		static int count = 0;
+		if (count == 0) // 한 번만 렌더링
+		{
+			pixels.resize(raytracer.width * raytracer.height);
 
-		raytracer.Render(pixels);
-		
-		// copy results to GPU memory
-		D3D11_MAPPED_SUBRESOURCE ms;
-		deviceContext->Map(canvasTexture, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);
-		memcpy(ms.pData, pixels.data(), pixels.size() * sizeof(glm::vec4));
-		deviceContext->Unmap(canvasTexture, NULL);
+			raytracer.Render(pixels);
+
+			// copy results to GPU memory
+			D3D11_MAPPED_SUBRESOURCE ms;
+			deviceContext->Map(canvasTexture, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);
+			memcpy(ms.pData, pixels.data( ), pixels.size( ) * sizeof(glm::vec4));
+			deviceContext->Unmap(canvasTexture, NULL);
+		}
+		count++;
 	}
 
 	// https://docs.microsoft.com/en-us/windows/win32/direct3d11/how-to--compile-a-shader
