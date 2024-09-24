@@ -40,6 +40,11 @@ public:
 			float dis2 = (- b + sqrt(det)) / 2.0f;
 
 			hit.d = glm::min(dis1, dis2);
+
+			// 물체 안에서 다시 밖으로 나가면서 충돌 가능
+			if (hit.d < 0.0f)
+				hit.d = glm::max(dis1, dis2);
+
 			hit.point = ray.start + ray.dir * hit.d;
 			hit.normal = glm::normalize(hit.point - this->center);
 		}

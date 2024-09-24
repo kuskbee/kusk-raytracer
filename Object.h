@@ -17,9 +17,9 @@ public:
 	vec3 spec = vec3(0.0f); // Specular
 
 	float alpha = 10.0f;
-	// float ks = 1.0f;
-	// float reflection_ = 0.0f;
-	// float transparency = 0.0f;
+	
+	float reflection = 0.0f;
+	float transparency = 0.0f;
 
 	std::shared_ptr<Texture> ambTexture;
 	std::shared_ptr<Texture> difTexture;
