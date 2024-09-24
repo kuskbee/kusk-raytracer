@@ -137,6 +137,8 @@
     <ClCompile Include="Image.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Sphere.h" />
+    <ClCompile Include="std_image.cpp" />
+    <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Circle.h" />
@@ -149,6 +151,7 @@
     <ClInclude Include="Ray.h" />
     <ClInclude Include="Raytracer.h" />
     <ClInclude Include="Square.h" />
+    <ClInclude Include="Texture.h" />
     <ClInclude Include="Triangle.h" />
   </ItemGroup>
   <ItemGroup>

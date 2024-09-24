@@ -4,6 +4,7 @@
 
 #include "Hit.h"
 #include "Ray.h"
+#include "Texture.h"
 
 using namespace glm;
 
@@ -20,8 +21,8 @@ public:
 	// float reflection_ = 0.0f;
 	// float transparency = 0.0f;
 
-	// std::shared_ptr<Texture> ambTexture;
-	// std::shared_ptr<Textrue> difTexture;
+	std::shared_ptr<Texture> ambTexture;
+	std::shared_ptr<Texture> difTexture;
 
 	Object(const vec3& color = {1.0f, 1.0f, 1.0f})
 		: amb(color), dif(color), spec(color)

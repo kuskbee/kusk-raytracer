@@ -17,7 +17,6 @@ public:
 	int width, height;
 	Light light;
 	std::vector<shared_ptr<Object>> objects;
-	shared_ptr<Object> tempObject;
 
 	Raytracer(const int& width, const int& height)
 		: width(width), height(height)
@@ -108,14 +107,44 @@ public:
 
 			objects.push_back(sphere1);
 
-			auto triangle = make_shared<Triangle>(vec3(-2.0f, -2.0f, 2.0f), vec3(-2.0f, 2.0f, 2.0f), vec3(2.0f, 2.0f, 2.0f));
-			triangle->amb = vec3(1.0f);
-			triangle->dif = vec3(0.0f);
-			triangle->spec = vec3(0.0f);
+			// 간단한 이미지
+			std::vector<vec3> textureImage(4 * 4);
+			for (int j = 0; j < 4; j++)
+				for (int i = 0; i < 4; i++)
+				{
+					if (i % 4 == 0)
+					{
+						textureImage[ i + 4 * j ] = vec3(1.0f, 0.0f, 0.0f) * (1.0f + j) * 0.25f;
+					}
+					else if (i % 4 == 1)
+					{
+						textureImage[ i + 4 * j ] = vec3(0.0f, 1.0f, 0.0f) * (1.0f + j) * 0.25f;
+					}
+					else if (i % 4 == 2)
+					{
+						textureImage[ i + 4 * j ] = vec3(0.0f, 0.0f, 1.0f) * (1.0f + j) * 0.25f;
+					}
+					else
+					{
+						textureImage[ i + 4 * j ] = vec3(1.0f, 1.0f, 1.0f) * (1.0f + j) * 0.25f;
+					}
+				}
 
-			tempObject = triangle; // 따로 처리하기 위해 임시로 저장
+			auto imageTexture = std::make_shared<Texture>(4, 4, textureImage);
+			//auto imageTexture = std::make_shared<Texture>("shadertoy_abstract1.jpg");
 
-			objects.push_back(triangle);
+			auto square = make_shared<Square>(vec3(-2.0f, 2.0f, 2.0f), vec3(2.0f, 2.0f, 2.0f), vec3(2.0f, -2.0f, 2.0f), vec3(-2.0f, -2.0f, 2.0f),
+											  vec2(0.0f, 0.0f), vec2(4.0f, 0.0f), vec2(4.0f, 4.0f), vec2(0.0f, 4.0f)); // uv 좌표 (texture 좌표)도 같이 지정
+
+			square->amb = vec3(1.0f);
+			square->dif = vec3(0.0f);
+			square->spec = vec3(0.0f);
+
+			square->ambTexture = imageTexture;
+			square->difTexture = imageTexture;
+
+			objects.push_back(square);
+
 		}
 
 		light = Light{ {0.0f, 1.0f, 0.5f } };
@@ -136,11 +165,8 @@ public:
 				closestHit.obj = objects[ l ];
 				closestD = hit.d;
 
-				// Barycentric coordinates 복사
-				closestHit.w = hit.w;
-
 				// 텍스춰 좌표
-				// closestHit.uv = hit.uv;
+				closestHit.uv = hit.uv;
 			}
 		}
 
@@ -163,19 +189,14 @@ public:
 			glm::vec3 pointColor;
 
 			// Ambient
-			pointColor = hit.obj->amb;
-
-			if (hit.obj == this->tempObject) // 임시로 삼각형만 색을 직접 결정
+			if (hit.obj->ambTexture)
 			{
-				const auto color0 = vec3(1.0f, 0.0f, 0.0f);
-				const auto color1 = vec3(0.0f, 1.0f, 0.0f);
-				const auto color2 = vec3(0.0f, 0.0f, 1.0f);
-
-				const float w0 = hit.w[ 0 ]; // hit.w.x
-				const float w1 = hit.w[ 1 ]; // hit.w.y
-				const float w2 = 1.0f - w0 - w1;
-
-				pointColor = color0 * w0 + color1 * w1 + color2 * w2;
+				pointColor = hit.obj->amb * hit.obj->ambTexture->SampleLinear(hit.uv);
+				//pointColor = hit.obj->amb * hit.obj->ambTexture->SamplePoint(hit.uv);
+			}
+			else
+			{
+				pointColor = hit.obj->amb;
 			}
 
 			const vec3 dirToLight = glm::normalize(light.pos - hit.point);
@@ -192,13 +213,18 @@ public:
 			const float diff = glm::max(dot(hit.normal, dirToLight), 0.0f);
 
 			// Specular
-			//const vec3 reflectDir = 2.0f * glm::max(dot(hit.normal, dirToLight), 0.0f) * hit.normal - dirToLight; // 2 (n dot l) n - l
-			//const float specular = glm::pow(glm::max(glm::dot(-ray.dir, reflectDir), 0.0f), hit.obj->alpha);
-
 			const vec3 reflectDir = dirToLight - hit.normal * 2.0f * dot(dirToLight, hit.normal);
 			const float specular = glm::pow(glm::max(glm::dot(ray.dir, reflectDir), 0.0f), hit.obj->alpha);
 
-			pointColor += diff * hit.obj->dif;
+			if (hit.obj->difTexture)
+			{
+				pointColor += diff * hit.obj->dif * hit.obj->difTexture->SampleLinear(hit.uv);
+			}
+			else
+			{
+				pointColor += diff * hit.obj->dif;
+			}
+
 			pointColor += hit.obj->spec * specular;
 
 			return pointColor;

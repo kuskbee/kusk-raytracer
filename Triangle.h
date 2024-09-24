@@ -32,12 +32,7 @@ public :
 			hit.d = t;
 			hit.point = point;
 			hit.normal = faceNormal;
-
-			// Barycentric coordinates 확인용
-			hit.w = vec2(w0, w1);
-
-			// 텍스춰링(texturing)에서 사용
-			// hit.uv = uv0 * u + uv1 * v + uv2 * (1.0f - u - v);
+			hit.uv = uv0 * w0 + uv1 * w1 + uv2 * (1.0f - w0 - w1); // 텍스춰 좌표
 		}
 
 		return hit;
@@ -93,14 +88,13 @@ public :
 		// 텍스춰링(texturing)에서 사용
 		// 아래에서 cross poduct의 절대값으로 작은 삼각형 넓이 계산
 		
-		const float area0 = glm::length(cross0) * 0.5;
-		const float area1 = glm::length(cross1) * 0.5;
-		const float area2 = glm::length(cross2) * 0.5;
+		const float area0 = glm::length(cross0) * 0.5f;
+		const float area1 = glm::length(cross1) * 0.5f;
+		const float area2 = glm::length(cross2) * 0.5f;
 
 		const float areaSum = area0 + area1 + area2;
 
-		// 기호에 alpha, beta, gamma 또는 u, v, w 등을 사용하기도 함.
-		w0 = area0 / areaSum;
+		w0 = area0 / areaSum;	// 기호에 alpha, beta, gamma 또는 u, v, w 등을 사용하기도 함.
 		w1 = area1 / areaSum;
 
 		return true;
