@@ -19,7 +19,7 @@ public:
 	std::vector<shared_ptr<Object>> objects;
 
 	Raytracer(const int& width, const int& height)
-		: width(width), height(height)
+		: width(width / 8), height(height / 8)
 	{
 #pragma region sphere3_sample_perspective
 		if(false)
@@ -98,7 +98,7 @@ public:
 #pragma endregion
 
 		{
-			auto sphere1 = make_shared<Sphere>(vec3(1.0f, 0.0f, 1.5f), 0.4f);
+			auto sphere1 = make_shared<Sphere>(vec3(1.0f, 0.0f, 1.5f), 0.8f);
 
 			sphere1->amb = vec3(0.2f);
 			sphere1->dif = vec3(1.0f, 0.2f, 0.2f);
@@ -107,41 +107,46 @@ public:
 
 			objects.push_back(sphere1);
 
-			// 간단한 이미지
-			std::vector<vec3> textureImage(4 * 4);
-			for (int j = 0; j < 4; j++)
-				for (int i = 0; i < 4; i++)
-				{
-					if (i % 4 == 0)
+#pragma region sampling_texture
+			if(false)
+			{
+				// 간단한 이미지
+				std::vector<vec3> textureImage(4 * 4);
+				for (int j = 0; j < 4; j++)
+					for (int i = 0; i < 4; i++)
 					{
-						textureImage[ i + 4 * j ] = vec3(1.0f, 0.0f, 0.0f) * (1.0f + j) * 0.25f;
+						if (i % 4 == 0)
+						{
+							textureImage[ i + 4 * j ] = vec3(1.0f, 0.0f, 0.0f) * (1.0f + j) * 0.25f;
+						}
+						else if (i % 4 == 1)
+						{
+							textureImage[ i + 4 * j ] = vec3(0.0f, 1.0f, 0.0f) * (1.0f + j) * 0.25f;
+						}
+						else if (i % 4 == 2)
+						{
+							textureImage[ i + 4 * j ] = vec3(0.0f, 0.0f, 1.0f) * (1.0f + j) * 0.25f;
+						}
+						else
+						{
+							textureImage[ i + 4 * j ] = vec3(1.0f, 1.0f, 1.0f) * (1.0f + j) * 0.25f;
+						}
 					}
-					else if (i % 4 == 1)
-					{
-						textureImage[ i + 4 * j ] = vec3(0.0f, 1.0f, 0.0f) * (1.0f + j) * 0.25f;
-					}
-					else if (i % 4 == 2)
-					{
-						textureImage[ i + 4 * j ] = vec3(0.0f, 0.0f, 1.0f) * (1.0f + j) * 0.25f;
-					}
-					else
-					{
-						textureImage[ i + 4 * j ] = vec3(1.0f, 1.0f, 1.0f) * (1.0f + j) * 0.25f;
-					}
-				}
 
-			auto imageTexture = std::make_shared<Texture>(4, 4, textureImage);
-			//auto imageTexture = std::make_shared<Texture>("shadertoy_abstract1.jpg");
+				auto imageTexture = std::make_shared<Texture>(4, 4, textureImage);
+			}
+#pragma endregion
+			auto imageTexture = std::make_shared<Texture>("shadertoy_abstract1.jpg");
 
 			auto square = make_shared<Square>(vec3(-2.0f, 2.0f, 2.0f), vec3(2.0f, 2.0f, 2.0f), vec3(2.0f, -2.0f, 2.0f), vec3(-2.0f, -2.0f, 2.0f),
-											  vec2(0.0f, 0.0f), vec2(4.0f, 0.0f), vec2(4.0f, 4.0f), vec2(0.0f, 4.0f)); // uv 좌표 (texture 좌표)도 같이 지정
+											  vec2(0.0f, 0.0f), vec2(1.0f, 0.0f), vec2(1.0f, 1.0f), vec2(0.0f, 1.0f)); // uv 좌표 (texture 좌표)도 같이 지정
 
-			square->amb = vec3(1.0f);
-			square->dif = vec3(0.0f);
+			square->amb = vec3(0.2f);
+			square->dif = vec3(1.0f);
 			square->spec = vec3(0.0f);
 
-			square->ambTexture = imageTexture;
-			square->difTexture = imageTexture;
+			// square->ambTexture = imageTexture;
+			// square->difTexture = imageTexture;
 
 			objects.push_back(square);
 
@@ -191,8 +196,8 @@ public:
 			// Ambient
 			if (hit.obj->ambTexture)
 			{
-				pointColor = hit.obj->amb * hit.obj->ambTexture->SampleLinear(hit.uv);
-				//pointColor = hit.obj->amb * hit.obj->ambTexture->SamplePoint(hit.uv);
+				pointColor = hit.obj->amb * hit.obj->ambTexture->SamplePoint(hit.uv);
+				//pointColor = hit.obj->amb * hit.obj->ambTexture->SampleLinear(hit.uv);
 			}
 			else
 			{
@@ -233,22 +238,52 @@ public:
 		return vec3(0.0f);
 	}
 
+	vec3 traceRay2x2(vec3 eyePos, vec3 pixelPos, const float dx, const int recursiveLevel)
+	{
+		//:DEBUG:
+		// cout << recursiveLevel << " : " << dx << endl;
+		if (recursiveLevel == 0)
+		{
+			Ray myRay{ pixelPos, glm::normalize(pixelPos - eyePos) };
+			return traceRay(myRay);
+		}
+
+		const float subdx = 0.5f * dx;
+		
+		vec3 pixelColor(0.0f);
+		pixelPos = vec3(pixelPos.x - subdx * 0.5f, pixelPos.y - subdx * 0.5f, pixelPos.z);
+
+		for(int j = 0; j < 2; j++)
+			for (int i = 0; i < 2; i++)
+			{
+				vec3 subPos(pixelPos.x + float(i) * subdx, pixelPos.y + float(j) * subdx, pixelPos.z);
+				pixelColor += traceRay2x2(eyePos, subPos, subdx, recursiveLevel - 1);
+				//exit(-1); //:DEBUG: 확인용
+			}
+
+		return pixelColor * 0.25f;
+	}
+
 	void Render(std::vector<glm::vec4>& pixels)
 	{
 		std::fill(pixels.begin(), pixels.end(), vec4{ 0.0f, 0.0f, 0.0f, 1.0f });
 
 		const vec3 eyePos(0.0f, 0.0f, -1.5f);
 
+		const float dx = 2.0f / this->height; // 범위가 (-1, 1)이라서 2를 나눔.
+
 #pragma omp parallel for
 		for (int j = 0; j < height; j++)
 			for (int i = 0; i < width; i++) {
 				const vec3 pixelPosWorld = TransformScreenToWorld(vec2(i, j));
 
-				//const auto rayDir = vec3(0.0f, 0.0f, 1.0f);	// Orthographic projection
-				const auto rayDir = glm::normalize(pixelPosWorld - eyePos); // Perspective projection
-				Ray pixelRay{ pixelPosWorld, rayDir };
+				// const auto rayDir = vec3(0.0f, 0.0f, 1.0f);	// Orthographic projection
+				// const auto rayDir = glm::normalize(pixelPosWorld - eyePos); // Perspective projection
+				// Ray pixelRay{ pixelPosWorld, rayDir };
+				// pixels[ size_t(i + width * j) ] = vec4(glm::clamp(traceRay(pixelRay), 0.0f, 1.0f), 1.0f);
 
-				pixels[ size_t(i + width * j) ] = vec4(glm::clamp(traceRay(pixelRay), 0.0f, 1.0f), 1.0f);
+				const auto pixelColor = traceRay2x2(eyePos, pixelPosWorld, dx, 3);
+				pixels[ i + width * j ] = vec4(glm::clamp(pixelColor, 0.0f, 1.0f), 1.0f);
 			}
 	}
 

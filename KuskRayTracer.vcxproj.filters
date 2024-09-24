@@ -62,7 +62,9 @@
     <ClInclude Include="Square.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="Texture.h" />
+    <ClInclude Include="Texture.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="VS.hlsl" />
