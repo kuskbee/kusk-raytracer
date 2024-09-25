@@ -14,5 +14,5 @@ public:
 	
 	vec2 uv;		// 텍스춰 좌표
 
-	std::shared_ptr<Object> obj; // 물체의 재질 등을 가져오기 위한 포인터
+	std::shared_ptr<Object> obj = nullptr; // 물체의 재질 등을 가져오기 위한 포인터
 };

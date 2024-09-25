@@ -5,6 +5,7 @@
 #include "Light.h"
 #include "Triangle.h"
 #include "Square.h"
+#include "Cube.h"
 
 #include <vector>
 
@@ -194,6 +195,7 @@ public:
 #pragma endregion
 
 #pragma region refraction
+		if(false)
 		{
 			auto sphere1 = make_shared<Sphere>(vec3(0.0f, -0.1f, 1.5f), 1.0f);
 
@@ -238,7 +240,75 @@ public:
 		}
 #pragma endregion
 
-		light = Light{ {0.0f, 0.3f, -0.5f} };
+		{
+			const float ground_y = -1.5f;
+			{
+				float radius = 0.5f;
+				auto sphere1 = make_shared<Sphere>(vec3(-1.5f, ground_y + radius, 4.0f), radius);
+
+				sphere1->amb = vec3(0.2f, 0.2f, 0.2f);
+				sphere1->dif = vec3(0.0f, 0.0f, 1.0f);
+				sphere1->spec = vec3(0.0f);
+				sphere1->alpha = 50.0f;
+				sphere1->reflection = 0.0f;
+				sphere1->transparency = 1.0f;
+
+				objects.push_back(sphere1);
+			}
+
+			{
+				float radius = 1.0f;
+				auto sphere1 = make_shared<Sphere>(vec3(0.3f, ground_y + radius, 3.5f), radius);
+
+				sphere1->amb = vec3(0.0f, 0.0f, 0.0f);
+				sphere1->dif = vec3(1.0f, 0.0f, 0.0f);
+				//sphere1->spec = vec3(0.5f);
+				//sphere1->alpha = 200.0f;
+				sphere1->reflection = 0.5f;
+				sphere1->transparency = 0.0f;
+
+				objects.push_back(sphere1);
+			}
+
+			{
+				float radius = 0.3f;
+				auto sphere1 = make_shared<Sphere>(vec3(1.0f, ground_y + radius, 2.5f), radius);
+
+				sphere1->amb = vec3(0.0f, 0.0f, 0.0f);
+				sphere1->dif = vec3(0.3f, 0.2f, 0.8f);
+				sphere1->spec = vec3(1.0f);
+				sphere1->alpha = 30.0f;
+				sphere1->reflection = 0.2f;
+				sphere1->transparency = 0.0f;
+
+				objects.push_back(sphere1);
+			}
+
+			auto groundTexture = std::make_shared<Texture>("shadertoy_abstract1.jpg");
+
+			auto ground = make_shared<Square>(vec3(-7.0f, ground_y, 0.0f), vec3(-7.0f, ground_y, 10.0f), vec3(7.0f, ground_y, 10.0f), vec3(7.0f, ground_y, 0.0f),
+											  vec2(0.0f, 0.0f), vec2(4.0f, 0.0f), vec2(4.0f, 4.0f), vec2(0.0f, 4.0f));
+
+			ground->amb = vec3(0.0f);
+			ground->dif = vec3(1.0f);
+			ground->spec = vec3(1.0f);
+			ground->alpha = 30.0f;
+			ground->reflection = 0.8f;
+			ground->ambTexture = groundTexture;
+			ground->difTexture = groundTexture;
+
+			objects.push_back(ground);
+
+			
+			{
+				auto cube = make_shared<Cube>(vec3(-10.0f, 10.0f, 10.0f), vec3(10.0f, 10.0f, 10.0f), vec3(10.0f, -10.0f, 10.0f), vec3(-10.0f, -10.0f, 10.0f),
+				vec3(-10.0f, 10.0f, -10.0f), vec3(10.0f, 10.0f, -10.0f), vec3(10.0f, -10.0f, -10.0f), vec3(-10.0f, -10.0f, -10.0f));
+
+				objects.push_back(cube);
+			}
+		}
+
+		light = Light{ {0.0f, 1.0f, 1.0f} };
 	}
 
 	Hit FindClosestCollision(Ray& ray)
@@ -253,7 +323,8 @@ public:
 			if (hit.d >= 0.0f && hit.d < closestD)
 			{
 				closestHit = hit;
-				closestHit.obj = objects[ l ];
+				if(nullptr == hit.obj)
+					closestHit.obj = objects[ l ];
 				closestD = hit.d;
 
 				// 텍스춰 좌표
@@ -406,7 +477,7 @@ public:
 	{
 		std::fill(pixels.begin(), pixels.end(), vec4{ 0.0f, 0.0f, 0.0f, 1.0f });
 
-		const vec3 eyePos(0.0f, 0.0f, -1.5f);
+		const vec3 eyePos(0.0f, 0.0f, -2.5f);
 
 		const float dx = 2.0f / this->height; // 범위가 (-1, 1)이라서 2를 나눔.
 

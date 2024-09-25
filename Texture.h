@@ -13,9 +13,9 @@ class Texture
 {	
 public:
 	int width, height, channels;
-	std::vector<uint8_t> image;
+	std::vector<vec4> image;
 
-	Texture(const std::string& filename);
+	Texture(const std::string& filename, const bool bloom=false);
 	Texture(const int& width, const int& height, const std::vector<vec3>& pixels);
 	
 	vec3 GetClamped(int i, int j)
@@ -23,9 +23,9 @@ public:
 		i = glm::clamp(i, 0, width - 1);
 		j = glm::clamp(j, 0, height - 1);
 
-		const float r = image[ (i + width * j) * channels + 0 ] / 255.0f;
-		const float g = image[ (i + width * j) * channels + 1 ] / 255.0f;
-		const float b = image[ (i + width * j) * channels + 2 ] / 255.0f;
+		const float r = image[ (i + width * j)].x;
+		const float g = image[ (i + width * j)].y;
+		const float b = image[ (i + width * j)].z;
 
 		return vec3(r, g, b);
 	}
@@ -40,9 +40,9 @@ public:
 		if (j < 0)
 			j += height;
 
-		const float r = image[ (i + width * j) * channels + 0 ] / 255.0f;
-		const float g = image[ (i + width * j) * channels + 1 ] / 255.0f;
-		const float b = image[ (i + width * j) * channels + 2 ] / 255.0f;
+		const float r = image[ (i + width * j) ].x;
+		const float g = image[ (i + width * j) ].y;
+		const float b = image[ (i + width * j) ].z;
 
 		return vec3(r, g, b);
 	}
@@ -92,5 +92,7 @@ public:
 		//return InterpolateBilinear(dx, dy, GetClamped(i, j), GetClamped(i + 1, j), GetClamped(i, j + 1), GetClamped(i + 1, j + 1));
 		return InterpolateBilinear(dx, dy, GetWrapped(i, j), GetWrapped(i + 1, j), GetWrapped(i, j + 1), GetWrapped(i + 1, j + 1));
 	}
+
+	void GaussianBlur5( );
 };
 

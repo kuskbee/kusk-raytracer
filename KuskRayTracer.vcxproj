@@ -142,6 +142,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Circle.h" />
+    <ClInclude Include="Cube.h" />
     <ClInclude Include="Example.h" />
     <ClInclude Include="graphics.h" />
     <ClInclude Include="Hit.h" />
