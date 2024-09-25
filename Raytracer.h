@@ -157,6 +157,7 @@ public:
 #pragma endregion
 
 #pragma region reflection
+		if(false)
 		{
 			auto sphere1 = make_shared<Sphere>(vec3(0.0f, -0.1f, 1.5f), 1.0f);
 			sphere1->amb = vec3(0.1f);
@@ -187,10 +188,57 @@ public:
 			ground->difTexture = groundTexture;
 
 			objects.push_back(ground);
+
+			light = Light{ {0.0f, 0.5f, -0.5f} };
 		}
 #pragma endregion
 
-		light = Light{ {0.0f, 0.5f, -0.5f} };
+#pragma region refraction
+		{
+			auto sphere1 = make_shared<Sphere>(vec3(0.0f, -0.1f, 1.5f), 1.0f);
+
+			sphere1->amb = vec3(0.2f);
+			sphere1->dif = vec3(0.0f, 0.0f, 1.0f);
+			sphere1->spec = vec3(0.0f);
+			sphere1->alpha = 50.0f;
+			sphere1->reflection = 0.0f;
+			sphere1->transparency = 1.0f;
+
+			objects.push_back(sphere1);
+
+			auto groundTexture = std::make_shared<Texture>("shadertoy_abstract1.jpg");
+
+			auto ground = make_shared<Square>(vec3(-10.0f, -1.5f, 0.0f), vec3(-10.0f, -1.5f, 10.0f), vec3(10.0f, -1.5f, 10.0f), vec3(10.0f, -1.5f, 0.0f),
+											  vec2(0.0f, 0.0f), vec2(1.0f, 0.0f), vec2(1.0f, 1.0f), vec2(0.0f, 1.0f));
+
+			ground->amb = vec3(1.0f);
+			ground->dif = vec3(1.0f);
+			ground->spec = vec3(1.0f);
+			ground->alpha = 10.0f;
+			ground->reflection = 0.0f;
+			ground->ambTexture = groundTexture;
+			ground->difTexture = groundTexture;
+
+			objects.push_back(ground);
+
+			auto squareTexture = std::make_shared<Texture>("back.jpg");
+			auto square = make_shared<Square>(vec3(-10.0f, 10.0f, 10.0f), vec3(10.0f, 10.0f, 10.0f), vec3(10.0f, -10.0f, 10.0f), vec3(-10.0f, -10.0f, 10.0f),
+											  vec2(0.0f, 0.0f), vec2(1.0f, 0.0f), vec2(1.0f, 1.0f), vec2(0.0f, 1.0f));
+
+			square->amb = vec3(1.0f);
+			square->dif = vec3(0.0f);
+			square->spec = vec3(0.0f);
+			square->alpha = 10.0f;
+			square->reflection = 0.0f;
+			square->ambTexture = squareTexture;
+			square->difTexture = squareTexture;
+
+			objects.push_back(square);
+
+		}
+#pragma endregion
+
+		light = Light{ {0.0f, 0.3f, -0.5f} };
 	}
 
 	Hit FindClosestCollision(Ray& ray)
@@ -238,7 +286,7 @@ public:
 			const vec3 dirToLight = glm::normalize(light.pos - hit.point);
 
 			// Shadow (주석처리)
-			//Ray shadowRay = { hit.point + dirToLight * 1e-4f, dirToLight }; // 충돌점 자체에서 충돌감지되는 것을 방지 (+ dirToLight * 1e-4f)
+			//Ray shadowRay = { hit.point + dirToLight * 1e-4f, dirToLight }; // add a small vector to avoid numerical issue
 			//const auto hit2 = FindClosestCollision(shadowRay);
 			//const float dirToLightLen = glm::length(light.pos - hit.point); 
 			//if (!(hit2.d >= 0.0f && dirToLightLen > hit2.d))
@@ -249,18 +297,18 @@ public:
 				const float diff = glm::max(dot(hit.normal, dirToLight), 0.0f);
 
 				// Specular
-				const vec3 reflectDir = dirToLight - hit.normal * 2.0f * dot(dirToLight, hit.normal);
-				const float specular = glm::pow(glm::max(glm::dot(ray.dir, reflectDir), 0.0f), hit.obj->alpha);
+				const vec3 reflectDir = hit.normal * 2.0f * dot(dirToLight, hit.normal) - dirToLight;
+				const float specular = glm::pow(glm::max(glm::dot(-ray.dir, reflectDir), 0.0f), hit.obj->alpha);
 
 				// Ambient
 				if (hit.obj->ambTexture)
 				{
 					//phongColor = hit.obj->amb * hit.obj->ambTexture->SamplePoint(hit.uv);
-					phongColor = hit.obj->amb * hit.obj->ambTexture->SampleLinear(hit.uv);
+					phongColor += hit.obj->amb * hit.obj->ambTexture->SampleLinear(hit.uv);
 				}
 				else
 				{
-					phongColor = hit.obj->amb;
+					phongColor += hit.obj->amb;
 				}
 
 				if (hit.obj->difTexture)
@@ -280,8 +328,8 @@ public:
 				{
 					// 반사광이 반환해준 색을 더할 때의 비율은 hit.obj->reflection
 
-					const vec3 reflectedDirection = glm::normalize(hit.normal * 2.0f * dot(-ray.dir, hit.normal) + ray.dir);
-					Ray reflectRay{ hit.point + reflectedDirection * 1e-4f, reflectedDirection };
+					const vec3 reflectedDirection = glm::normalize(2.0f * hit.normal *  dot(-ray.dir, hit.normal) + ray.dir);
+					Ray reflectRay{ hit.point + reflectedDirection * 1e-4f, reflectedDirection }; // add a small vector to avoid numerical issue
 
 					color += traceRay(reflectRay, recurseLevel - 1) * hit.obj->reflection;
 				}
@@ -289,6 +337,34 @@ public:
 				if (hit.obj->transparency)
 				{
 					// 투명한 물체의 굴절 처리
+
+					const float ior = 1.5f; // Index of refraction (유리 : 1.5, 물 : 1.3)
+
+					float eta; // sinTheta1 / sinTheta2
+					vec3 normal;
+
+					if (glm::dot(ray.dir, hit.normal) < 0.0f) // 밖에서 안으로 들어가는 경우 (예: 공기->유리)
+					{
+						eta = ior;
+						normal = hit.normal;
+					}
+					else { // 안에서 밖으로 나가는 경우 (예: 유리->공기)
+						eta = 1.0f / ior;
+						normal = -hit.normal;
+					}
+
+					const float cosTheta1 = dot(-ray.dir, normal);
+					const float sinTheta1 = sqrt(1.0f - cosTheta1 * cosTheta1); // cos^2 + sin^2 = 1
+					const float sinTheta2 = sinTheta1 / eta;
+					const float cosTheta2 = sqrt(1.0f - sinTheta2 * sinTheta2);
+
+					const vec3 m = glm::normalize(glm::dot(-ray.dir, normal) * normal + ray.dir);
+					const vec3 a = -normal * cosTheta2;
+					const vec3 b = m * sinTheta2;
+					const vec3 refractedDirection = glm::normalize(a + b);	// transmission
+					
+					Ray refractedRay{ hit.point + refractedDirection + 1e-4f, refractedDirection };
+					color += traceRay(refractedRay, recurseLevel - 1) * hit.obj->transparency;
 				}
 
 			}
