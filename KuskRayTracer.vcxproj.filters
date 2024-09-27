@@ -27,6 +27,7 @@
     <ClCompile Include="std_image.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Camera.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Example.h">
@@ -68,6 +69,7 @@
     <ClInclude Include="Cube.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="Camera.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="VS.hlsl" />

@@ -40,16 +40,35 @@ public:
 	ID3D11SamplerState* colorSampler;
 	UINT indexCount;
 
+	
+	bool m_keyPressed[ 256 ] = {
+		false,
+	};
+
+	bool m_leftButton = false;
+	bool m_rightButton = false;
+	bool m_dragStartFlag = false;
+
+	// 마우스 커서 위치 저장 (Picking에 사용)
+	float m_cursorNdcX = 0.0f;
+	float m_cursorNdcY = 0.0f;
+
 	Example(HWND window, int width, int height)
 		: raytracer(width, height)
 	{
 		Initialize(window, width, height);
 	}
 
-	void Update()
+	LRESULT MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+	void OnMouseMove(int mouseX, int mouseY);
+
+	void Update(float dt)
 	{
-		static int count = 0;
-		if (count == 0) // 한 번만 렌더링
+		// 카메라의 이동
+		raytracer.m_camera.UpdateKeyboard(dt, m_keyPressed);
+
+		//static int count = 0;
+		//if (count == 0) // 한 번만 렌더링
 		{
 			pixels.resize(raytracer.width * raytracer.height);
 
@@ -61,7 +80,7 @@ public:
 			memcpy(ms.pData, pixels.data( ), pixels.size( ) * sizeof(glm::vec4));
 			deviceContext->Unmap(canvasTexture, NULL);
 		}
-		count++;
+		//count++;
 	}
 
 	// https://docs.microsoft.com/en-us/windows/win32/direct3d11/how-to--compile-a-shader

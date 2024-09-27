@@ -8,6 +8,7 @@
 
 #include "Example.h"
 
+Example* example = nullptr;
 
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -54,7 +55,7 @@ int main()
 	UpdateWindow(hwnd);
 
 	// Create Example Instance
-	auto example = std::make_unique<Example>(hwnd, width, height);
+	example = new Example(hwnd, width, height);
 
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -89,7 +90,7 @@ int main()
 			ImGui::Render();*/
 
 			// Example cycle
-			example->Update();
+			example->Update(ImGui::GetIO( ).DeltaTime);
 			example->Render();
 
 			//ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // :IMGUI:
@@ -108,42 +109,17 @@ int main()
 	DestroyWindow(hwnd);
 	UnregisterClass(wc.lpszClassName, wc.hInstance);
 
+	delete example;
+	example = nullptr;
+
 	return 0;
 }
-
-// Forward declare message handler from imgui_impl_win32.cpp
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 // Windows procedure
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
-		return true;
-
-	switch (msg)
-	{
-	case WM_SIZE:
-		return 0;
-	case WM_SYSCOMMAND:
-		if ((wParam & 0xfff0) == SC_KEYMENU) // Disable ALT application menu
-			return 0;
-		break;
-	case WM_MOUSEMOVE:
-		//std::cout << "Mouse " << LOWORD(lParam) << " " << HIWORD(lParam) << std::endl;
-		break;
-	case WM_LBUTTONUP:
-		//std::cout << "WM_LBUTTONUP Left mouse button" << std::endl;
-		break;
-	case WM_RBUTTONUP:
-		//std::cout << "WM_RBUTTONUP Right mouse button" << std::endl;
-		break;
-	case WM_KEYDOWN:
-		//std::cout << "WM_KEYDOWN " << (int)wParam << std::endl;
-		break;
-	case WM_DESTROY:
-		::PostQuitMessage(0);
-		return 0;
-	}
-
-	return ::DefWindowProc(hWnd, msg, wParam, lParam);
+	if (example)
+		return example->MsgProc(hWnd, msg, wParam, lParam);
+	else
+		return ::DefWindowProc(hWnd, msg, wParam, lParam);
 }

@@ -6,6 +6,8 @@
 #include "Triangle.h"
 #include "Square.h"
 #include "Cube.h"
+#include "Camera.h"
+
 
 #include <vector>
 
@@ -19,8 +21,13 @@ public:
 	Light light;
 	std::vector<shared_ptr<Object>> objects;
 
+	// 시점을 결정하는 카메라 클래스 추가
+	Camera m_camera;
+
+	bool m_lightRotate = false;
+
 	Raytracer(const int& width, const int& height)
-		: width(width), height(height)
+		: width(width/8), height(height/8)
 	{
 #pragma region sphere3_sample_perspective
 		if(false)
@@ -477,18 +484,33 @@ public:
 	{
 		std::fill(pixels.begin(), pixels.end(), vec4{ 0.0f, 0.0f, 0.0f, 1.0f });
 
-		const vec3 eyePos(0.0f, 0.0f, -2.5f);
+		const vec3 eyePos = m_camera.GetEyePos( );
+		const vec3 viewDir = m_camera.GetViewDir();
+		const vec3 upDir = m_camera.GetUpDir( );
+		const vec3 rightDir = glm::normalize(glm::cross(viewDir, upDir)); // glm이 RH 기준이라.. 음수 붙여줌.
+		
+		float fov = glm::radians(45.0f);
+		float aspectRatio = float(width) / float(height);
+
+		float imagePlaneHeight = 2.0f * tan(fov / 2.0f);
+		float imagePlaneWidth = imagePlaneHeight * aspectRatio;
+
+		// 카메라의 뷰 행렬을 가져옴.
+		mat4 viewMatrix = m_camera.GetViewRow( ); // 카메라의 뷰 행렬
 
 		const float dx = 2.0f / this->height; // 범위가 (-1, 1)이라서 2를 나눔.
 
 #pragma omp parallel for
 		for (int j = 0; j < height; j++)
 			for (int i = 0; i < width; i++) {
-				const vec3 pixelPosWorld = TransformScreenToWorld(vec2(i, j));
+				float ndcX = (2.0f * i / width) - 1.0f;
+				float ndcY = 1.0f - (2.0f * j / height);
 
+				vec3 pixelPosCameraSpace = eyePos + viewDir	+ rightDir * ndcX * (imagePlaneWidth / 2.0f) + upDir * ndcY * (imagePlaneHeight / 2.0f);
+				
 				// const auto rayDir = vec3(0.0f, 0.0f, 1.0f);	// Orthographic projection
-				const auto rayDir = glm::normalize(pixelPosWorld - eyePos); // Perspective projection
-				Ray pixelRay{ pixelPosWorld, rayDir };
+				const auto rayDir = glm::normalize(pixelPosCameraSpace - eyePos); // Perspective projection
+				Ray pixelRay{ eyePos, rayDir };
 				pixels[ i + width * j ] = vec4(glm::clamp(traceRay(pixelRay, 5), 0.0f, 1.0f), 1.0f);
 
 				//const auto pixelColor = traceRay2x2(eyePos, pixelPosWorld, dx, 3);
