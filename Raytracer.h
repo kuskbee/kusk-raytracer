@@ -27,7 +27,7 @@ public:
 	bool m_lightRotate = false;
 
 	Raytracer(const int& width, const int& height)
-		: width(width/4), height(height/4)
+		: width(width/8), height(height/8)
 	{
 #pragma region sphere3_sample_perspective
 		if(false)
@@ -342,6 +342,14 @@ public:
 		return closestHit;
 	}
 	
+	glm::vec3 RandomOffset( ) {
+		// 랜덤한 오프셋을 생성하기 위해 -0.1에서 0.1 사이의 값을 X, Y, Z에 더해줌
+		float offsetX = (( float ) rand( ) / RAND_MAX - 0.5f) * 0.2f; // -0.1 ~ 0.1
+		float offsetY = (( float ) rand( ) / RAND_MAX - 0.5f) * 0.2f; // -0.1 ~ 0.1
+		float offsetZ = (( float ) rand( ) / RAND_MAX - 0.5f) * 0.2f; // -0.1 ~ 0.1
+		return glm::vec3(offsetX, offsetY, offsetZ);
+	}
+
 	// 광선이 물체에 닿으면 그 물체의 색 반환
 	vec3 traceRay(Ray& ray, const int recurseLevel)
 	{
@@ -363,105 +371,135 @@ public:
 
 			const vec3 dirToLight = glm::normalize(light.pos - hit.point);
 
-			// Shadow (주석처리)
-			//Ray shadowRay = { hit.point + dirToLight * 1e-4f, dirToLight }; // add a small vector to avoid numerical issue
-			//const auto hit2 = FindClosestCollision(shadowRay);
-			//const float dirToLightLen = glm::length(light.pos - hit.point); 
-			//if (!(hit2.d >= 0.0f && dirToLightLen > hit2.d))
+			// Soft Shadow 적용 : 여러 샘플을 사용한 그림자 처리
+			float shadowFactor = 1.0f;
+			const int numShadowSamples = 8; // 샘플링할 광원의 수
+
+			const static vec3 offset[ 8 ] = {
+				{ 0.00379956,0.0130528,-0.0111179},
+				{ -0.0947996,-0.0389996,0.0706473},
+				{ -0.0633106,-0.0246193,-0.0164708},
+				{ -0.0175817,0.0277749,-0.0704093},
+				{ -0.0814325,-0.0560106,-0.0363933},
+				{ 0.098291,-0.0297891,0.056914},
+				{ -0.0017304,-0.0568346,-0.0184362},
+				{ 0.00716269,-0.0721854,0.0140477}
+			};
+
+			for (int i = 0; i < numShadowSamples; i++)
 			{
-				glm::vec3 phongColor(0.0f);
+				// 광원의 작은 변화를 적용하여 여러 지점에서 샘플링
+
+				vec3 lightSamplePos;
+				if (m_lightRotate)
+					lightSamplePos = light.pos + RandomOffset( );
+				else
+					lightSamplePos = light.pos + offset[i];
+
 				
-				// Diffuse
-				const float diff = glm::max(dot(hit.normal, dirToLight), 0.0f);
+				vec3 dirToSampleLight = glm::normalize(lightSamplePos - hit.point);
+				Ray shadowRay = { hit.point + dirToSampleLight * 1e-4f, dirToSampleLight };
 
-				// Specular
-				const vec3 reflectDir = hit.normal * 2.0f * dot(dirToLight, hit.normal) - dirToLight;
-				const float specular = glm::pow(glm::max(glm::dot(-ray.dir, reflectDir), 0.0f), hit.obj->alpha);
+				const auto shadowHit = FindClosestCollision(shadowRay);
+				const float dirToSampleLightLen = glm::length(lightSamplePos - hit.point);
 
-				// Ambient
-				if (hit.obj->ambTexture)
+				// 그림자 감쇠 계산 : 광원에 가까울 수록 그림자 강도가 낮아짐
+				if (shadowHit.d >= 0.0f && dirToSampleLightLen > shadowHit.d)
 				{
-					//phongColor = hit.obj->amb * hit.obj->ambTexture->SamplePoint(hit.uv);
-					phongColor += hit.obj->amb * hit.obj->ambTexture->SampleLinear(hit.uv);
+					shadowFactor -= 1.0f / numShadowSamples; // 샘플마다 그림자를 감쇠 시킴
 				}
-				else
-				{
-					phongColor += hit.obj->amb;
-				}
-
-				if (hit.obj->difTexture)
-				{
-					phongColor += diff * hit.obj->dif * hit.obj->difTexture->SampleLinear(hit.uv);
-				}
-				else
-				{
-					phongColor += diff * hit.obj->dif;
-				}
-
-				phongColor += hit.obj->spec * specular;
-
-				color += phongColor * (1.0f - hit.obj->reflection - hit.obj->transparency);
-
-				if (hit.obj->reflection)
-				{
-					// 반사광이 반환해준 색을 더할 때의 비율은 hit.obj->reflection
-
-					const vec3 reflectedDirection = glm::normalize(2.0f * hit.normal *  dot(-ray.dir, hit.normal) + ray.dir);
-					Ray reflectRay{ hit.point + reflectedDirection * 1e-4f, reflectedDirection }; // add a small vector to avoid numerical issue
-
-					color += traceRay(reflectRay, recurseLevel - 1) * hit.obj->reflection;
-				}
-
-				if (hit.obj->transparency)
-				{
-					// 투명한 물체의 굴절 처리
-
-					const float ior = 1.5f; // Index of refraction (유리 : 1.5, 물 : 1.3)
-
-					float eta; // sinTheta1 / sinTheta2
-					vec3 normal;
-
-					if (glm::dot(ray.dir, hit.normal) < 0.0f) // 밖에서 안으로 들어가는 경우 (예: 공기->유리)
-					{
-						eta = ior;
-						normal = hit.normal;
-					}
-					else { // 안에서 밖으로 나가는 경우 (예: 유리->공기)
-						eta = 1.0f / ior;
-						normal = -hit.normal;
-					}
-
-					const float cosTheta1 = dot(-ray.dir, normal);
-					const float sinTheta1 = sqrt(1.0f - cosTheta1 * cosTheta1); // cos^2 + sin^2 = 1
-					const float sinTheta2 = sinTheta1 / eta;
-					const float cosTheta2 = sqrt(1.0f - sinTheta2 * sinTheta2);
-
-					const vec3 m = glm::normalize(glm::dot(-ray.dir, normal) * normal + ray.dir);
-					const vec3 a = -normal * cosTheta2;
-					const vec3 b = m * sinTheta2;
-					const vec3 refractedDirection = glm::normalize(a + b);	// transmission
-					
-					Ray refractedRay{ hit.point + refractedDirection + 1e-4f, refractedDirection };
-					color += traceRay(refractedRay, recurseLevel - 1) * hit.obj->transparency;
-				}
-
 			}
-			//else return hit.obj->amb; // Shadow (주석처리)
+			
+			glm::vec3 phongColor(0.0f);
 
-			return color;
+			// Diffuse
+			const float diff = glm::max(dot(hit.normal, dirToLight), 0.0f);
+
+			// Specular
+			const vec3 reflectDir = hit.normal * 2.0f * dot(dirToLight, hit.normal) - dirToLight;
+			const float specular = glm::pow(glm::max(glm::dot(-ray.dir, reflectDir), 0.0f), hit.obj->alpha);
+
+			// Ambient
+			if (hit.obj->ambTexture)
+			{
+				//phongColor = hit.obj->amb * hit.obj->ambTexture->SamplePoint(hit.uv);
+				phongColor += hit.obj->amb * hit.obj->ambTexture->SampleLinear(hit.uv);
+			}
+			else
+			{
+				phongColor += hit.obj->amb;
+			}
+
+			if (hit.obj->difTexture)
+			{
+				phongColor += diff * hit.obj->dif * hit.obj->difTexture->SampleLinear(hit.uv);
+			}
+			else
+			{
+				phongColor += diff * hit.obj->dif;
+			}
+
+			phongColor += hit.obj->spec * specular;
+
+			color += phongColor * (1.0f - hit.obj->reflection - hit.obj->transparency);
+
+			if (hit.obj->reflection)
+			{
+				// 반사광이 반환해준 색을 더할 때의 비율은 hit.obj->reflection
+
+				const vec3 reflectedDirection = glm::normalize(2.0f * hit.normal * dot(-ray.dir, hit.normal) + ray.dir);
+				Ray reflectRay{ hit.point + reflectedDirection * 1e-4f, reflectedDirection }; // add a small vector to avoid numerical issue
+
+				color += traceRay(reflectRay, recurseLevel - 1) * hit.obj->reflection;
+			}
+
+			if (hit.obj->transparency)
+			{
+				// 투명한 물체의 굴절 처리
+
+				const float ior = 1.5f; // Index of refraction (유리 : 1.5, 물 : 1.3)
+
+				float eta; // sinTheta1 / sinTheta2
+				vec3 normal;
+
+				if (glm::dot(ray.dir, hit.normal) < 0.0f) // 밖에서 안으로 들어가는 경우 (예: 공기->유리)
+				{
+					eta = ior;
+					normal = hit.normal;
+				}
+				else { // 안에서 밖으로 나가는 경우 (예: 유리->공기)
+					eta = 1.0f / ior;
+					normal = -hit.normal;
+				}
+
+				const float cosTheta1 = dot(-ray.dir, normal);
+				const float sinTheta1 = sqrt(1.0f - cosTheta1 * cosTheta1); // cos^2 + sin^2 = 1
+				const float sinTheta2 = sinTheta1 / eta;
+				const float cosTheta2 = sqrt(1.0f - sinTheta2 * sinTheta2);
+
+				const vec3 m = glm::normalize(glm::dot(-ray.dir, normal) * normal + ray.dir);
+				const vec3 a = -normal * cosTheta2;
+				const vec3 b = m * sinTheta2;
+				const vec3 refractedDirection = glm::normalize(a + b);	// transmission
+
+				Ray refractedRay{ hit.point + refractedDirection + 1e-4f, refractedDirection };
+				color += traceRay(refractedRay, recurseLevel - 1) * hit.obj->transparency;
+			}
+
+			return color * shadowFactor;
 		}
 
 		return vec3(0.0f);
 	}
 
-	/*vec3 traceRay2x2(vec3 eyePos, vec3 pixelPos, const float dx, const int recursiveLevel)
+	vec3 traceRay2x2(vec3 eyePos, vec3 pixelPos, const float dx, const int recursiveLevel)
 	{
 		//:DEBUG:
 		// cout << recursiveLevel << " : " << dx << endl;
 		if (recursiveLevel == 0)
 		{
 			Ray myRay{ pixelPos, glm::normalize(pixelPos - eyePos) };
-			return traceRay(myRay);
+			return traceRay(myRay, 5);
 		}
 
 		const float subdx = 0.5f * dx;
@@ -478,7 +516,7 @@ public:
 			}
 
 		return pixelColor * 0.25f;
-	}*/
+	}
 
 	void UpdateLight(float dt)
 	{
@@ -525,7 +563,7 @@ public:
 				Ray pixelRay{ eyePos, rayDir };
 				pixels[ i + width * j ] = vec4(glm::clamp(traceRay(pixelRay, 5), 0.0f, 1.0f), 1.0f);
 
-				//const auto pixelColor = traceRay2x2(eyePos, pixelPosWorld, dx, 3);
+				//const auto pixelColor = traceRay2x2(eyePos, pixelPosCameraSpace, dx, 2);
 				//pixels[ i + width * j ] = vec4(glm::clamp(pixelColor, 0.0f, 1.0f), 1.0f);
 			}
 	}
