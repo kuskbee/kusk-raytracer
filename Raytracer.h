@@ -27,7 +27,7 @@ public:
 	bool m_lightRotate = false;
 
 	Raytracer(const int& width, const int& height)
-		: width(width/8), height(height/8)
+		: width(width/4), height(height/4)
 	{
 #pragma region sphere3_sample_perspective
 		if(false)
@@ -160,7 +160,7 @@ public:
 
 			objects.push_back(square);
 
-			light = Light{ {0.0f, 1.0f, 0.5f } };
+			light = Light{ {0.0f, 1.0f, 2.0f } };
 		}
 #pragma endregion
 
@@ -257,8 +257,8 @@ public:
 				sphere1->dif = vec3(0.0f, 0.0f, 1.0f);
 				sphere1->spec = vec3(0.0f);
 				sphere1->alpha = 50.0f;
-				sphere1->reflection = 0.0f;
-				sphere1->transparency = 1.0f;
+				sphere1->reflection = 0.05f;
+				sphere1->transparency = 0.9f;
 
 				objects.push_back(sphere1);
 			}
@@ -479,6 +479,18 @@ public:
 
 		return pixelColor * 0.25f;
 	}*/
+
+	void UpdateLight(float dt)
+	{
+		const vec3 lightFixedPos = vec3(0.0f, 1.0f, 2.0f);
+		static vec3 lightDev = vec3(0.0f, 0.0f, 2.0f);
+		if (m_lightRotate)
+		{
+			lightDev = vec3(glm::rotate(glm::mat4(1.0f), dt * glm::pi<float>( ), vec3(0.0f, 1.0f, 0.0f)) * vec4(lightDev, 1.0f));
+		}
+
+		light.pos = lightFixedPos + lightDev;
+	}
 
 	void Render(std::vector<glm::vec4>& pixels)
 	{

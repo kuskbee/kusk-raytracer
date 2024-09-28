@@ -66,6 +66,7 @@ public:
 	{
 		// 카메라의 이동
 		raytracer.m_camera.UpdateKeyboard(dt, m_keyPressed);
+		raytracer.UpdateLight(dt);
 
 		//static int count = 0;
 		//if (count == 0) // 한 번만 렌더링
