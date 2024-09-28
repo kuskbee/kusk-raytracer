@@ -27,7 +27,7 @@ public:
 	bool m_lightRotate = false;
 
 	Raytracer(const int& width, const int& height)
-		: width(width/8), height(height/8)
+		: width(width/4), height(height/4)
 	{
 #pragma region sphere3_sample_perspective
 		if(false)
@@ -374,6 +374,7 @@ public:
 			// Soft Shadow 적용 : 여러 샘플을 사용한 그림자 처리
 			float shadowFactor = 1.0f;
 			const int numShadowSamples = 8; // 샘플링할 광원의 수
+			const float maxDistance = 10.0f;
 
 			const static vec3 offset[ 8 ] = {
 				{ 0.00379956,0.0130528,-0.0111179},
@@ -403,10 +404,12 @@ public:
 				const auto shadowHit = FindClosestCollision(shadowRay);
 				const float dirToSampleLightLen = glm::length(lightSamplePos - hit.point);
 
+				const float distanceAttenuation = glm::clamp(1.0f - (dirToSampleLightLen / maxDistance), 0.0f, 1.0f);
+
 				// 그림자 감쇠 계산 : 광원에 가까울 수록 그림자 강도가 낮아짐
 				if (shadowHit.d >= 0.0f && dirToSampleLightLen > shadowHit.d)
 				{
-					shadowFactor -= 1.0f / numShadowSamples; // 샘플마다 그림자를 감쇠 시킴
+					shadowFactor -= (1.0f / numShadowSamples) * distanceAttenuation; // 샘플마다 그림자를 감쇠 시킴
 				}
 			}
 			
