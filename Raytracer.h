@@ -24,7 +24,7 @@ public:
 	// 시점을 결정하는 카메라 클래스 추가
 	Camera m_camera;
 
-	bool m_lightRotate = false;
+	bool m_lightRotate = true;
 
 	Raytracer(const int& width, const int& height)
 		: width(width/4), height(height/4)
@@ -300,7 +300,7 @@ public:
 			ground->dif = vec3(1.0f);
 			ground->spec = vec3(1.0f);
 			ground->alpha = 30.0f;
-			ground->reflection = 0.8f;
+			ground->reflection = 0.6f;
 			ground->ambTexture = groundTexture;
 			ground->difTexture = groundTexture;
 
@@ -376,27 +376,13 @@ public:
 			const int numShadowSamples = 8; // 샘플링할 광원의 수
 			const float maxDistance = 10.0f;
 
-			const static vec3 offset[ 8 ] = {
-				{ 0.00379956,0.0130528,-0.0111179},
-				{ -0.0947996,-0.0389996,0.0706473},
-				{ -0.0633106,-0.0246193,-0.0164708},
-				{ -0.0175817,0.0277749,-0.0704093},
-				{ -0.0814325,-0.0560106,-0.0363933},
-				{ 0.098291,-0.0297891,0.056914},
-				{ -0.0017304,-0.0568346,-0.0184362},
-				{ 0.00716269,-0.0721854,0.0140477}
-			};
-
 			for (int i = 0; i < numShadowSamples; i++)
 			{
 				// 광원의 작은 변화를 적용하여 여러 지점에서 샘플링
 
-				vec3 lightSamplePos;
+				vec3 lightSamplePos = light.pos;
 				if (m_lightRotate)
-					lightSamplePos = light.pos + RandomOffset( );
-				else
-					lightSamplePos = light.pos + offset[i];
-
+					lightSamplePos += RandomOffset( );
 				
 				vec3 dirToSampleLight = glm::normalize(lightSamplePos - hit.point);
 				Ray shadowRay = { hit.point + dirToSampleLight * 1e-4f, dirToSampleLight };
@@ -542,7 +528,7 @@ public:
 		const vec3 upDir = m_camera.GetUpDir( );
 		const vec3 rightDir = glm::normalize(glm::cross(viewDir, upDir)); // glm이 RH 기준이라.. 음수 붙여줌.
 		
-		float fov = glm::radians(45.0f);
+		float fov = glm::radians(60.0f);
 		float aspectRatio = float(width) / float(height);
 
 		float imagePlaneHeight = 2.0f * tan(fov / 2.0f);
