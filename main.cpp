@@ -80,20 +80,29 @@ int main()
 		else
 		{
 			// Start ImGui frame :IMGUI:
-			/*ImGui_ImplDX11_NewFrame();
+			ImGui_ImplDX11_NewFrame();
 			ImGui_ImplWin32_NewFrame();
 			ImGui::NewFrame();
 			ImGui::Begin("Scene Control");
-			ImGui::SliderFloat3("Light Position", &example->raytracer.light.pos.x, -2.0f, 2.0f);
-			ImGui::SliderFloat3("Sphere Position", &example->raytracer.sphere->center.x, -1.0f, 1.0f);
+
+			ImGui::Checkbox("Camera view change mode (F) (WASD, QE)", &example->raytracer.m_camera.m_useFirstPersonView);
+			ImGui::Checkbox("Rotate Light", &example->raytracer.m_lightRotate);
+			ImGui::Checkbox("Enable Shadows", &example->raytracer.m_enableShadows);
+			if (example->raytracer.m_enableShadows) {
+				ImGui::Checkbox("Enable Soft Shadows", &example->raytracer.m_enableSoftShadows);
+			}
+			ImGui::Checkbox("Enable Reflection", &example->raytracer.m_enableReflection);
+			ImGui::Checkbox("Enable refraction", &example->raytracer.m_enableRefraction);
+			ImGui::Checkbox("Enable Anti-aliasing", &example->raytracer.m_enableAntialiasing);
+
 			ImGui::End();
-			ImGui::Render();*/
+			ImGui::Render();
 
 			// Example cycle
 			example->Update(ImGui::GetIO( ).DeltaTime);
 			example->Render();
 
-			//ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // :IMGUI:
+			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData()); // :IMGUI:
 
 			// switch the back buffer and the front buffer
 			example->swapChain->Present(1, 0);

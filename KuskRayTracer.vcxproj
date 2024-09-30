@@ -137,6 +137,7 @@
     <ClCompile Include="Example.cpp" />
     <ClCompile Include="Image.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Raytracer.cpp" />
     <ClCompile Include="Sphere.h" />
     <ClCompile Include="std_image.cpp" />
     <ClCompile Include="Texture.cpp" />

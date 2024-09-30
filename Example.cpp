@@ -45,9 +45,9 @@ LRESULT Example::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         if (wParam == VK_ESCAPE) { // ESC키 종료
             DestroyWindow(hwnd);
         }
-        if (wParam == VK_SPACE) {
+       /* if (wParam == VK_SPACE) {
             raytracer.m_lightRotate = !raytracer.m_lightRotate;
-        }
+        }*/
         break;
     case WM_KEYUP:
         if (wParam == 'F') { // f키 일인칭 시점
