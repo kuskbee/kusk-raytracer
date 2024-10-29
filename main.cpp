@@ -94,6 +94,7 @@ int main()
 			ImGui::Checkbox("Enable Reflection", &example->raytracer.m_enableReflection);
 			ImGui::Checkbox("Enable refraction", &example->raytracer.m_enableRefraction);
 			ImGui::Checkbox("Enable Anti-aliasing", &example->raytracer.m_enableAntialiasing);
+			ImGui::Checkbox("Enable Fresnel Effect", &example->raytracer.m_enableFresnel);
 
 			ImGui::End();
 			ImGui::Render();

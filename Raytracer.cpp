@@ -1,7 +1,9 @@
 #include "Raytracer.h"
 
+#include <algorithm>
+
 Raytracer::Raytracer(const int& width, const int& height)
-	: width(width / 8), height(height / 8)
+	: width(width), height(height)
 {
 #pragma region sphere3_sample_perspective
 	if (false)
@@ -227,12 +229,12 @@ Raytracer::Raytracer(const int& width, const int& height)
 			float radius = 0.5f;
 			auto sphere1 = make_shared<Sphere>(vec3(-1.5f, ground_y + radius, 4.0f), radius);
 
-			sphere1->amb = vec3(0.2f, 0.2f, 0.2f);
-			sphere1->dif = vec3(0.0f, 0.0f, 1.0f);
+			sphere1->amb = vec3(0.0f, 0.0f, 0.0f);
+			sphere1->dif = vec3(1.0f, 1.0f, 1.0f);
 			sphere1->spec = vec3(0.0f);
 			sphere1->alpha = 50.0f;
-			sphere1->reflection = 0.05f;
-			sphere1->transparency = 0.9f;
+			sphere1->reflection = 0.02f;
+			sphere1->transparency = 0.98f;
 
 			objects.push_back(sphere1);
 		}
@@ -245,7 +247,7 @@ Raytracer::Raytracer(const int& width, const int& height)
 			sphere1->dif = vec3(1.0f, 0.0f, 0.0f);
 			//sphere1->spec = vec3(0.5f);
 			//sphere1->alpha = 200.0f;
-			sphere1->reflection = 0.5f;
+			sphere1->reflection = 0.2f;
 			sphere1->transparency = 0.0f;
 
 			objects.push_back(sphere1);
@@ -351,6 +353,27 @@ vec3 Raytracer::traceRay2x2(vec3 eyePos, vec3 pixelPos, const float dx, const in
 	return pixelColor * 0.25f;
 }
 
+float SchlickFresnelReflectAmount(float n1, float n2, vec3 normal, vec3 toEye, float reflection)
+{
+	float r0 = (n1 - n2) / (n1 + n2);
+	r0 *= r0;
+	float cosX = dot(normal, toEye);
+	
+	float x = 1.0 - cosX;
+	float ret = r0 + (1.0 - r0) * pow(x, 5.0);
+
+	ret = (reflection + (1.0 - reflection) * ret);
+	return ret;
+}
+
+//vec3 SchlickFresnel(vec3 fresnelR0, vec3 normal, vec3 toEye)
+//{
+//	float normalDotView = std::clamp(std::max(dot(normal, toEye), 0.0f), 0.0f , 1.0f);
+//	float f0 = 1.0f - normalDotView; // 90도이면 f0 = 1, 0도이면 f0 = 0
+//
+//	return fresnelR0 + (1.0f - fresnelR0) * pow(f0, 5.0f);
+//}
+
 vec3 Raytracer::traceRay(Ray& ray, const int recurseLevel)
 {
 	if (recurseLevel < 0)
@@ -412,6 +435,18 @@ vec3 Raytracer::traceRay(Ray& ray, const int recurseLevel)
 		const vec3 reflectDir = hit.normal * 2.0f * dot(dirToLight, hit.normal) - dirToLight;
 		const float specular = glm::pow(glm::max(glm::dot(-ray.dir, reflectDir), 0.0f), hit.obj->alpha);
 
+		float reflectMultiplier = 1.0f;
+		float refractMultiplier = 1.0f;
+
+		if (m_enableFresnel) {
+			reflectMultiplier = SchlickFresnelReflectAmount(1.0f, 1.5f, hit.normal, -ray.dir, hit.obj->reflection);
+			refractMultiplier = 1.0f - reflectMultiplier;
+		}
+		else {
+			// Fresnel OFF 상태에서 약한 반사율 근사치
+			reflectMultiplier = hit.obj->reflection;
+		}	refractMultiplier = hit.obj->transparency;
+
 		// Ambient
 		if (hit.obj->ambTexture)
 		{
@@ -443,7 +478,7 @@ vec3 Raytracer::traceRay(Ray& ray, const int recurseLevel)
 			const vec3 reflectedDirection = glm::normalize(2.0f * hit.normal * dot(-ray.dir, hit.normal) + ray.dir);
 			Ray reflectRay{ hit.point + reflectedDirection * 1e-4f, reflectedDirection }; // add a small vector to avoid numerical issue
 
-			color += traceRay(reflectRay, recurseLevel - 1) * hit.obj->reflection;
+			color += traceRay(reflectRay, recurseLevel - 1) * reflectMultiplier;
 		}
 
 		if (m_enableRefraction && hit.obj->transparency)
@@ -476,7 +511,7 @@ vec3 Raytracer::traceRay(Ray& ray, const int recurseLevel)
 			const vec3 refractedDirection = glm::normalize(a + b);	// transmission
 
 			Ray refractedRay{ hit.point + refractedDirection + 1e-4f, refractedDirection };
-			color += traceRay(refractedRay, recurseLevel - 1) * hit.obj->transparency;
+			color += traceRay(refractedRay, recurseLevel - 1) * refractMultiplier;
 		}
 
 		return color * shadowFactor;

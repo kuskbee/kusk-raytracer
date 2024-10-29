@@ -30,6 +30,7 @@ public:
 	bool m_enableReflection = true;
 	bool m_enableRefraction = true;
 	bool m_enableAntialiasing = false;
+	bool m_enableFresnel = false;
 
 	Raytracer(const int& width, const int& height);
 	
